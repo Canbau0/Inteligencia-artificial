@@ -3,12 +3,27 @@ using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
+    public enum EnemyType
+    {
+        Normal,
+        Francotirador,
+        Huye
+    }
+
+    [SerializeField] private EnemyType enemyType;
+
+    public EnemyType GetEnemyType()
+    {
+        return enemyType;
+    }
+
     [Header("Referencias")]
     [SerializeField] private Transform player;
     [SerializeField] private LineOfSight los;
     [SerializeField] private EnemyDecisionTree decisionTree;
     private EnemyContext context;
-
+    [SerializeField] private EnemyPathfinding pathfinding;
+    [SerializeField] private HealthController health;
 
     [Header("Variables")]
     [SerializeField] private float speed = 3f;
@@ -45,7 +60,9 @@ public class EnemyController : MonoBehaviour
     {
         context.player = player;
         context.distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
+        context.currentHealth = health.GetCurrentHealth();
+        
+        context.enemyType = enemyType;
         decisionTree.Evaluate(this, context);
     }
 
@@ -97,6 +114,39 @@ public class EnemyController : MonoBehaviour
         transform.forward = Vector3.Lerp(transform.forward, moveDir, Time.deltaTime * rotationSpeed);
     }
 
+    public void FollowPath()
+    {        
+
+        if (pathfinding.path == null || pathfinding.path.Count == 0)
+        {            
+            pathfinding.CalculatePath();
+        }
+        
+        //Si después de intentar calcular el camino la lista sigue vacía, chau
+        if (pathfinding.path == null || pathfinding.path.Count == 0)
+        {            
+            return;
+        }        
+
+        Vector3 target = pathfinding.path[0].transform.position;
+
+        Vector3 dir = target - transform.position;
+        dir.y = 0;
+
+        transform.position += dir.normalized * speed * Time.deltaTime;
+
+        transform.forward = Vector3.Lerp(
+            transform.forward,
+            dir.normalized,
+            rotationSpeed * Time.deltaTime
+        );
+
+        if (dir.magnitude < 0.2f)
+        {
+            pathfinding.path.RemoveAt(0);
+        }
+    }
+
     public void ShootPlayer()
     {
         fireTimer += Time.deltaTime;
@@ -106,6 +156,13 @@ public class EnemyController : MonoBehaviour
             fireTimer = 0;
             StartCoroutine(BurstFire());
         }
+    }
+    public void Flee()
+    {
+        Vector3 dir = transform.position - player.position;
+        dir.y = 0;
+        transform.position += dir.normalized * speed * Time.deltaTime;
+        transform.forward = Vector3.Lerp(transform.forward, dir.normalized, rotationSpeed * Time.deltaTime);
     }
 
     IEnumerator BurstFire()

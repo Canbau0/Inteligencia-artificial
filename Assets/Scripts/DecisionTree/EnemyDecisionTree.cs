@@ -7,24 +7,54 @@ public class EnemyDecisionTree : MonoBehaviour
     private void Awake()
     {
         ActionNode patrolNode = new ActionNode(enemy => enemy.Patrol());
-        ActionNode pursuitNode = new ActionNode(enemy => enemy.PursuePlayer());
+        ActionNode pathNode = new ActionNode(enemy => enemy.FollowPath());
         ActionNode shootNode = new ActionNode(enemy => enemy.ShootPlayer());
+        ActionNode fleeNode = new ActionNode(enemy => enemy.Flee());
 
-        //Esta cerca?
-        QuestionNode distanceCheck = new QuestionNode(context => context.distanceToPlayer < 5, shootNode, pursuitNode);
 
-        //Lo veo?
+        //Enemigo que huye
+        QuestionNode HuyeCheck = new QuestionNode(
+            context => context.currentHealth <= 5,
+            fleeNode,
+            pathNode
+        );
+
+
+        //Enemigo francotirador
+        QuestionNode FrancotiradorCheck = new QuestionNode(
+            context => context.distanceToPlayer < 8,
+            shootNode,
+            pathNode
+        );
+
+
+        //Enemigo normal
+        QuestionNode NormalCheck = new QuestionNode(
+            context => context.distanceToPlayer < 2,
+            shootNode,
+            pathNode
+        );
+
+
         rootNode = new QuestionNode(
-        context =>
+            context =>
             context.los.IsInRange(context.self, context.player) &&
             context.los.IsInAngle(context.self, context.player) &&
-            context.los.HasLineOfSight(context.self, context.player), distanceCheck, patrolNode);
+            context.los.HasLineOfSight(context.self, context.player),
+
+            new TipoNode(
+                NormalCheck,
+                FrancotiradorCheck,
+                HuyeCheck
+            ),
+
+            patrolNode
+        );
+
 
     }
-
     public void Evaluate(EnemyController enemy, EnemyContext context)
     {
         rootNode.Evaluate(enemy, context);
     }
-
 }

@@ -23,4 +23,29 @@ public class LineOfSight : MonoBehaviour
         Vector3 dir = target.position - self.position;
         return !Physics.Raycast(self.position, dir.normalized, dir.magnitude, obs);
     }
+
+    private void OnDrawGizmosSelected()
+    {
+        //distancia de visión
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(transform.position, distance);
+
+
+        //águlo de visión
+        Gizmos.color = Color.green;
+
+        Vector3 leftDir = Quaternion.Euler(0, -angle / 2, 0) * transform.forward;
+        Vector3 rightDir = Quaternion.Euler(0, angle / 2, 0) * transform.forward;
+
+
+        Gizmos.DrawRay(
+            transform.position,
+            leftDir * distance
+        );
+
+        Gizmos.DrawRay(
+            transform.position,
+            rightDir * distance
+        );
+    }
 }

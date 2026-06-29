@@ -6,4 +6,6 @@ public class EnemyContext : MonoBehaviour
     public Transform player;
     public LineOfSight los;
     public float distanceToPlayer;
+    public int currentHealth;
+    public EnemyController.EnemyType enemyType;
 }
